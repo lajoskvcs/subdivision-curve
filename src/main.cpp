@@ -66,36 +66,32 @@ void calculateAverageMask(int n) {
 
             float weight = binomialCoeficient(n,i)*std::powf(2,-n);
             float offset = i - n/2;
-            if(n == 2) {
-                std::cout << weight << std::endl << offset << std::endl;
-            }
             std::pair<float,float> weightOffset (weight,offset);
             averageMaskVector.push_back(weightOffset);
         }
     }
 }
 
-void split() {
-    if(points.size() > 2 && n >= 0 && n < points.size() - 1) {
+void split(std::vector<Point> pointsVector) {
+    if(pointsVector.size() > 2 && n >= 0 && n < pointsVector.size() - 1) {
         splitPoints.clear();
-        for(int i = 0; i < points.size(); i++) {
-            if(i == points.size() -1) {
-                Point currentPoint = points.at(i);
+        for(int i = 0; i < pointsVector.size(); i++) {
+            if(i == pointsVector.size() - 1) {
+                Point currentPoint = pointsVector.at(i);
                 splitPoints.push_back(currentPoint);
-                Point p = (currentPoint+points.at(0)) * 0.5;
+                Point p = (currentPoint+pointsVector.at(0)) * 0.5;
                 splitPoints.push_back(p);
             } else {
-                Point currentPoint = points.at(i);
+                Point currentPoint = pointsVector.at(i);
                 splitPoints.push_back(currentPoint);
-                Point p = (currentPoint+points.at(i+1)) * 0.5;
+                Point p = (currentPoint+pointsVector.at(i+1)) * 0.5;
                 splitPoints.push_back(p);
             }
         }
     }
 }
 
-int getIndex(int a, int b) {
-    int k = (int)points.size();
+int getIndex(int a, int b, int k) {
     int result;
     if(b >= 0) {
         result = (a+b) % (2*k);
@@ -105,17 +101,18 @@ int getIndex(int a, int b) {
     return result;
 }
 
-std::vector<Point> average(int n, Color c) {
+std::vector<Point> average(int n, Color c, int k) {
     std::vector<Point> tmp;
     if(points.size() > 2 && n >= 0 && n < points.size()-1) {
         calculateAverageMask(n);
-        int k = (int)points.size();
+        //int k = (int)points.size();
         for(int i = 0; i < 2*k; i++) {
             float x = 0;
             float y = 0;
             Point p = Point();
             for(int j = 0; j <= n; j++) {
-                int index = getIndex(i,(int)averageMaskVector.at(j).second);
+                int index = getIndex(i,(int)averageMaskVector.at(j).second, k);
+                Point tmpPoint = splitPoints.at(index);
                 x += averageMaskVector.at(j).first * splitPoints.at(index).getx();
                 y += averageMaskVector.at(j).first * splitPoints.at(index).gety();
             }
@@ -135,21 +132,29 @@ void calculateSubdivisionCurves() {
     q3.clear();
     q4.clear();
     if(n >= 0 && points.size() > 2) {
-
-        q0 = average(0, Color(1,0,0));
+        split(points);
+        int k = (int)points.size();
+        q0 = average(0, Color(1,0,0), k);
     }
     if(n >= 1) {
-
-        q1 = average(1, Color(0,1,0));
+        int k = (int)q0.size();
+        split(q0);
+        q1 = average(1, Color(0,1,0), k);
     }
     if(n >= 2) {
-        q2 = average(2, Color(0,0,1));
+        int k = (int)q1.size();
+        split(q1);
+        q2 = average(2, Color(0,0,1), k);
     }
     if(n >= 3) {
-        q3 = average(3, Color(1,0,1));
+        int k = (int)q2.size();
+        split(q2);
+        q3 = average(3, Color(1,0,1), k);
     }
     if(n >= 4) {
-        q4 = average(4, Color(0,1,1));
+        int k = (int)q3.size();
+        split(q3);
+        q4 = average(4, Color(0,1,1), k);
     }
 }
 
@@ -183,7 +188,7 @@ void drawDrawableCurves() {
 void drawSubdivisionCurve() {
     glClear(GL_COLOR_BUFFER_BIT);
 
-    split();
+    
     calculateSubdivisionCurves();
     drawDrawableCurves();
 
